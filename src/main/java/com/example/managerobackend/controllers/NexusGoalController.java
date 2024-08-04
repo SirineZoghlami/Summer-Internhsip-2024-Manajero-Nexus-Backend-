@@ -1,6 +1,5 @@
 package com.example.managerobackend.controllers;
 
-
 import com.example.managerobackend.models.NexusGoal;
 import com.example.managerobackend.services.NexusGoalService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +25,14 @@ public class NexusGoalController {
         return nexusGoalService.getNexusGoalById(id);
     }
 
-    @PostMapping
-    public NexusGoal createOrUpdateNexusGoal(@RequestBody NexusGoal nexusGoal) {
-        return nexusGoalService.createOrUpdateNexusGoal(nexusGoal);
+    @PostMapping("/create")
+    public NexusGoal createNexusGoal(@RequestBody NexusGoal nexusGoal) {
+        return nexusGoalService.createNexusGoal(nexusGoal);
+    }
+
+    @PutMapping("/update/{id}")
+    public NexusGoal updateNexusGoal(@PathVariable String id, @RequestBody NexusGoal nexusGoal) {
+        return nexusGoalService.updateNexusGoal(id, nexusGoal);
     }
 
     @DeleteMapping("/{id}")
@@ -36,4 +40,3 @@ public class NexusGoalController {
         nexusGoalService.deleteNexusGoal(id);
     }
 }
-
