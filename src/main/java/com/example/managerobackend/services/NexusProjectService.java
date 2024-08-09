@@ -5,10 +5,16 @@ import com.example.managerobackend.repositories.NexusProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class NexusProjectService {
@@ -18,19 +24,21 @@ public class NexusProjectService {
     @Autowired
     private NexusProjectRepository repository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     public List<NexusProject> getAllProjects() {
         logger.info("Fetching all projects");
         return repository.findAll();
     }
 
-    public Optional<NexusProject> getProjectById(String id) {
+    public NexusProject getProjectById(String id) {
         logger.info("Fetching project with ID: {}", id);
-        return repository.findById(id);
+        return repository.findById(id).orElse(null); // Return null if project not found
     }
 
     public NexusProject createProject(NexusProject project) {
         logger.info("Creating new project: {}", project);
-        // Validate the project data if necessary
         NexusProject createdProject = repository.save(project);
         logger.info("Project created with ID: {}", createdProject.getId());
         return createdProject;
@@ -52,5 +60,54 @@ public class NexusProjectService {
         logger.info("Deleting project with ID: {}", id);
         repository.deleteById(id);
         logger.info("Project deleted with ID: {}", id);
+    }
+
+    public Map<String, Object> calculateKpis() {
+        List<NexusProject> projects = mongoTemplate.findAll(NexusProject.class);
+
+        // Total Number of Projects
+        long totalProjects = projects.size();
+
+        // Number of Projects per Status (Manual Counting)
+        Map<String, Long> statusCount = new HashMap<>();
+        for (NexusProject project : projects) {
+            for (NexusProject.ProductBacklogItem item : project.getProductBacklog()) {
+                statusCount.put(item.getStatus(), statusCount.getOrDefault(item.getStatus(), 0L) + 1);
+            }
+        }
+
+        // Average Sprint Duration
+        double averageSprintDuration = projects.stream()
+                .flatMap(p -> p.getSprints().stream())
+                .mapToLong(sprint -> {
+                    if (sprint.getStartDate() != null && sprint.getEndDate() != null) {
+                        long duration = sprint.getEndDate().getTime() - sprint.getStartDate().getTime();
+                        return duration / (1000 * 60 * 60 * 24); // Convert duration to days
+                    }
+                    return 0; // Handle cases with null dates
+                })
+                .average()
+                .orElse(0.0);
+
+        // Total Number of Product Backlog Items
+        long totalBacklogItems = projects.stream()
+                .flatMap(p -> p.getProductBacklog().stream())
+                .count();
+
+        // Number of Goals per Project (Manual Counting)
+        Map<String, Long> goalsCount = new HashMap<>();
+        for (NexusProject project : projects) {
+            goalsCount.put(project.getProjectName(), (long) project.getGoals().size());
+        }
+
+        // Aggregate results
+        Map<String, Object> results = new HashMap<>();
+        results.put("totalProjects", totalProjects);
+        results.put("statusCount", statusCount);
+        results.put("averageSprintDuration", averageSprintDuration);
+        results.put("totalBacklogItems", totalBacklogItems);
+        results.put("goalsCount", goalsCount);
+
+        return results;
     }
 }

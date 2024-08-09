@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -29,11 +30,8 @@ public class NexusProjectController {
     @GetMapping("/{id}")
     public ResponseEntity<NexusProject> getProjectById(@PathVariable String id) {
         logger.info("Handling GET request to fetch project with ID: {}", id);
-        Optional<NexusProject> project = service.getProjectById(id);
-        return project.map(ResponseEntity::ok).orElseGet(() -> {
-            logger.warn("Project with ID: {} not found", id);
-            return ResponseEntity.notFound().build();
-        });
+        NexusProject project = service.getProjectById(id);
+        return project != null ? ResponseEntity.ok(project) : ResponseEntity.notFound().build();
     }
 
     @PostMapping
@@ -52,11 +50,7 @@ public class NexusProjectController {
     public ResponseEntity<NexusProject> updateProject(@PathVariable String id, @RequestBody NexusProject updatedProject) {
         logger.info("Handling PUT request to update project with ID: {}", id);
         NexusProject project = service.updateProject(id, updatedProject);
-        if (project == null) {
-            logger.warn("Project with ID: {} not found for update", id);
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(project);
+        return project != null ? ResponseEntity.ok(project) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
@@ -66,5 +60,15 @@ public class NexusProjectController {
         return ResponseEntity.noContent().build();
     }
 
-
+    @GetMapping("/kpis")
+    public ResponseEntity<?> getKpis() {
+        logger.info("Handling GET request to fetch KPIs");
+        try {
+            Map<String, Object> kpis = service.calculateKpis();
+            return ResponseEntity.ok(kpis);
+        } catch (Exception e) {
+            logger.error("Error fetching KPIs: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error fetching KPIs");
+        }
+    }
 }
