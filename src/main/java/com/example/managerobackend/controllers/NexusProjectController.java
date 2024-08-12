@@ -71,4 +71,35 @@ public class NexusProjectController {
             return ResponseEntity.status(500).body("Error fetching KPIs");
         }
     }
+
+    @GetMapping("/{id}/sprints")
+    public ResponseEntity<List<NexusProject.Sprint>> getSprintsByProjectId(@PathVariable String id) {
+        logger.info("Handling GET request to fetch sprints for project with ID: {}", id);
+        List<NexusProject.Sprint> sprints = service.getSprintsByProjectId(id);
+        return sprints != null ? ResponseEntity.ok(sprints) : ResponseEntity.notFound().build();
+    }
+
+
+    @PatchMapping("/{id}/sprints/{number}/complete")
+    public ResponseEntity<Void> markSprintAsComplete(@PathVariable String id, @PathVariable int number) {
+        logger.info("Handling PATCH request to mark sprint number {} as complete for project with ID: {}", number, id);
+        boolean success = service.markSprintAsComplete(id, number);
+        return success ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{id}/goals")
+    public ResponseEntity<List<NexusProject.NexusGoal>> getGoalsByProjectId(@PathVariable("id") String projectId) {
+        List<NexusProject.NexusGoal> goals = service.getGoalsByProjectId(projectId);
+        if (goals.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(goals);
+    }
+    @PostMapping("/{id}/backlog-items")
+    public ResponseEntity<NexusProject> addProductBacklogItemToProject(@PathVariable String id, @RequestBody NexusProject.ProductBacklogItem backlogItem) {
+        logger.info("Handling POST request to add a product backlog item to project with ID: {}", id);
+        NexusProject updatedProject = service.addProductBacklogItemToProject(id, backlogItem);
+        return updatedProject != null ? ResponseEntity.ok(updatedProject) : ResponseEntity.notFound().build();
+    }
+
 }

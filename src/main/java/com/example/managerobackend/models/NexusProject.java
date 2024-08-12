@@ -35,6 +35,7 @@ public class NexusProject {
         private Date startDate;
         private Date endDate;
         private String reviews;
+        private boolean completed;
     }
 
     @Data

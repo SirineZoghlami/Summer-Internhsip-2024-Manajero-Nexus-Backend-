@@ -11,9 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,11 +36,19 @@ public class NexusProjectService {
     }
 
     public NexusProject createProject(NexusProject project) {
+        // Initialize new sprints with default 'completed' value
+        for (NexusProject.Sprint sprint : project.getSprints()) {
+            if (!sprint.isCompleted()) {
+                sprint.setCompleted(false); // Default to false if not set
+            }
+        }
         logger.info("Creating new project: {}", project);
         NexusProject createdProject = repository.save(project);
         logger.info("Project created with ID: {}", createdProject.getId());
         return createdProject;
     }
+
+
 
     public NexusProject updateProject(String id, NexusProject updatedProject) {
         logger.info("Updating project with ID: {}", id);
@@ -109,5 +115,47 @@ public class NexusProjectService {
         results.put("goalsCount", goalsCount);
 
         return results;
+    }
+    public List<NexusProject.Sprint> getSprintsByProjectId(String projectId) {
+        logger.info("Fetching sprints for project with ID: {}", projectId);
+        NexusProject project = repository.findById(projectId).orElse(null);
+        return project != null ? project.getSprints() : null;
+    }
+
+    public List<NexusProject.NexusGoal> getGoalsByProjectId(String projectId) {
+        logger.info("Fetching goals for project with ID: {}", projectId);
+        NexusProject project = repository.findById(projectId).orElse(null);
+        return project != null ? project.getGoals() : Collections.emptyList();
+    }
+
+    public boolean markSprintAsComplete(String projectId, int sprintNumber) {
+        logger.info("Marking sprint number {} as complete for project with ID: {}", sprintNumber, projectId);
+        NexusProject project = repository.findById(projectId).orElse(null);
+
+        if (project != null) {
+            for (NexusProject.Sprint sprint : project.getSprints()) {
+                if (sprint.getNumber() == sprintNumber) {
+                    sprint.setCompleted(true);
+                    repository.save(project);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    public NexusProject addProductBacklogItemToProject(String projectId, NexusProject.ProductBacklogItem backlogItem) {
+        logger.info("Adding product backlog item to project with ID: {}", projectId);
+        NexusProject project = repository.findById(projectId).orElse(null);
+
+        if (project != null) {
+            if (project.getProductBacklog() == null) {
+                project.setProductBacklog(new ArrayList<>());
+            }
+            project.getProductBacklog().add(backlogItem);
+            return repository.save(project);
+        }
+
+        return null;
     }
 }
