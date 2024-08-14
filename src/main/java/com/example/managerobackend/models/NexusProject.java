@@ -26,6 +26,8 @@ public class NexusProject {
 
     @Data
     public static class ProductBacklogItem {
+
+        private String id;
         private String title;
         private String description;
         private String priority;

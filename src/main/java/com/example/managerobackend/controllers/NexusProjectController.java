@@ -110,6 +110,11 @@ public class NexusProjectController {
         service.addReviewToSprint(projectId, sprintNumber, review);
     }
 
+    @DeleteMapping("/{id}/sprints/{number}")
+    public ResponseEntity<Void> deleteSprint(@PathVariable String id, @PathVariable int number) {
+        logger.info("Handling DELETE request to delete sprint number {} for project with ID: {}", number, id);
+        boolean success = service.deleteSprint(id, number);
+        return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
 
-
-        }
+}

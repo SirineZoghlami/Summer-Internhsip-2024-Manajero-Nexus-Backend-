@@ -191,4 +191,28 @@ public class NexusProjectService {
             throw new RuntimeException("Project not found with ID: " + projectId);
         }
     }
+
+
+    public boolean deleteSprint(String projectId, int sprintNumber) {
+        logger.info("Deleting sprint number {} from project with ID: {}", sprintNumber, projectId);
+        Optional<NexusProject> projectOpt = repository.findById(projectId);
+
+        if (projectOpt.isPresent()) {
+            NexusProject project = projectOpt.get();
+
+            // Filter out the sprint to be removed
+            List<NexusProject.Sprint> updatedSprints = project.getSprints().stream()
+                    .filter(sprint -> sprint.getNumber() != sprintNumber)
+                    .collect(Collectors.toList());
+
+            if (updatedSprints.size() < project.getSprints().size()) {
+                // Update the project with the modified list of sprints
+                project.setSprints(updatedSprints);
+                repository.save(project);
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
