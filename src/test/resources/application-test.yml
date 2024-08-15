@@ -1,0 +1,14 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/testdb
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 2MB
+      max-file-size: 10MB
+      max-request-size: 10MB
+logging:
+  level:
+    org.springframework: INFO
+    com.example.managerobackend: DEBUG

@@ -36,12 +36,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Boot Starter Test for testing -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
+
 
         <!-- Validation API -->
         <dependency>
@@ -68,14 +63,27 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <version>3.3.1</version> <!-- Ensure this version matches your Spring Boot version -->
+        </dependency>
+
+
+
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.9.3</version> <!-- Latest JUnit 5 version -->
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.0</version>
+            <version>5.9.3</version>
             <scope>test</scope>
         </dependency>
+
+
 
         <!-- Mockito for mocking objects in tests -->
         <dependency>
@@ -92,6 +100,14 @@
             <version>3.6.0</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>de.flapdoodle.embed</groupId>
+            <artifactId>de.flapdoodle.embed.mongo.spring30x</artifactId>
+            <version>4.5.2</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 
