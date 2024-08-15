@@ -158,4 +158,81 @@ public class NexusProjectService {
 
         return null;
     }
+
+
+    public void addReviewToSprint(String projectId, int sprintNumber, NexusProject.Review review) {
+        Optional<NexusProject> optionalProject = repository.findById(projectId);
+        if (optionalProject.isPresent()) {
+            NexusProject project = optionalProject.get();
+
+            // Find the sprint by number
+            Optional<NexusProject.Sprint> optionalSprint = project.getSprints().stream()
+                    .filter(sprint -> sprint.getNumber() == sprintNumber)
+                    .findFirst();
+
+            if (optionalSprint.isPresent()) {
+                NexusProject.Sprint sprint = optionalSprint.get();
+
+                // Add the new review to the sprint's list of reviews
+                List<NexusProject.Review> reviews = sprint.getReviews();
+                if (reviews == null) {
+                    reviews = new ArrayList<>();
+                }
+                reviews.add(review);
+                sprint.setReviews(reviews);
+
+                // Save the updated project
+                repository.save(project);
+            } else {
+                // Handle case where sprint is not found
+                throw new RuntimeException("Sprint not found with number: " + sprintNumber);
+            }
+        } else {
+            // Handle case where project is not found
+            throw new RuntimeException("Project not found with ID: " + projectId);
+        }
+    }
+
+
+    public boolean deleteSprint(String projectId, int sprintNumber) {
+        logger.info("Deleting sprint number {} from project with ID: {}", sprintNumber, projectId);
+        Optional<NexusProject> projectOpt = repository.findById(projectId);
+
+        if (projectOpt.isPresent()) {
+            NexusProject project = projectOpt.get();
+
+            // Filter out the sprint to be removed
+            List<NexusProject.Sprint> updatedSprints = project.getSprints().stream()
+                    .filter(sprint -> sprint.getNumber() != sprintNumber)
+                    .collect(Collectors.toList());
+
+            if (updatedSprints.size() < project.getSprints().size()) {
+                // Update the project with the modified list of sprints
+                project.setSprints(updatedSprints);
+                repository.save(project);
+                return true;
+            }
+        }
+        return false;
+    }
+    public Map<String, Long> getPerformanceData() {
+        List<NexusProject> projects = mongoTemplate.findAll(NexusProject.class);
+        return projects.stream()
+                .collect(Collectors.groupingBy(
+                        project -> project.getId(),
+                        Collectors.counting()
+                ));
+    }
+
+    // Method to get efficiency data
+    public Map<String, Long> getEfficiencyData() {
+        List<NexusProject> projects = mongoTemplate.findAll(NexusProject.class);
+        return projects.stream()
+                .flatMap(project -> project.getSprints().stream())
+                .collect(Collectors.groupingBy(
+                        sprint -> sprint.isCompleted() ? "Completed" : "In Progress",
+                        Collectors.counting()
+                ));
+    }
+
 }
