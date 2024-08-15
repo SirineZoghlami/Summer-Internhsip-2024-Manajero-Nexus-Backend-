@@ -116,5 +116,13 @@ public class NexusProjectController {
         boolean success = service.deleteSprint(id, number);
         return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+    @GetMapping("/performance")
+    public Map<String, Long> getPerformanceData() {
+        return service.getPerformanceData();
+    }
 
+    @GetMapping("/efficiency")
+    public Map<String, Long> getEfficiencyData() {
+        return service.getEfficiencyData();
+    }
 }

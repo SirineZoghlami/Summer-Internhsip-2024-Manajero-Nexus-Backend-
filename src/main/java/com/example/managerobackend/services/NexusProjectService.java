@@ -214,5 +214,23 @@ public class NexusProjectService {
         }
         return false;
     }
+    public Map<String, Long> getPerformanceData() {
+        List<NexusProject> projects = mongoTemplate.findAll(NexusProject.class);
+        return projects.stream()
+                .collect(Collectors.groupingBy(
+                        project -> project.getId(),
+                        Collectors.counting()
+                ));
+    }
 
+    // Method to get efficiency data
+    public Map<String, Long> getEfficiencyData() {
+        List<NexusProject> projects = mongoTemplate.findAll(NexusProject.class);
+        return projects.stream()
+                .flatMap(project -> project.getSprints().stream())
+                .collect(Collectors.groupingBy(
+                        sprint -> sprint.isCompleted() ? "Completed" : "In Progress",
+                        Collectors.counting()
+                ));
+    }
 }
