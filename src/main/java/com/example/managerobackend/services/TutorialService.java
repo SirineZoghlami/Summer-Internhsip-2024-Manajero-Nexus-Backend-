@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TutorialService {
@@ -18,7 +20,13 @@ public class TutorialService {
     @Autowired
     private TutorialRepository tutorialRepository;
 
-    public Tutorial saveTutorial(Tutorial tutorial) {
+    private final String uploadDir = "./uploads/";
+
+    public Tutorial saveTutorial(Tutorial tutorial, MultipartFile file) throws IOException {
+        if (file != null && !file.isEmpty()) {
+            String imageUrl = saveImage(file);
+            tutorial.setImageUrl(imageUrl);
+        }
         return tutorialRepository.save(tutorial);
     }
 
@@ -30,7 +38,7 @@ public class TutorialService {
         return tutorialRepository.findById(id).orElse(null);
     }
 
-    public Tutorial updateTutorial(String id, Tutorial updatedTutorial) {
+    public Tutorial updateTutorial(String id, Tutorial updatedTutorial, MultipartFile file) throws IOException {
         return tutorialRepository.findById(id)
                 .map(tutorial -> {
                     tutorial.setIntroduction(updatedTutorial.getIntroduction());
@@ -40,9 +48,25 @@ public class TutorialService {
                     tutorial.setLimitations(updatedTutorial.getLimitations());
                     tutorial.setApplyingNexus(updatedTutorial.getApplyingNexus());
                     tutorial.setConclusion(updatedTutorial.getConclusion());
+                    if (file != null && !file.isEmpty()) {
+                        try {
+                            String imageUrl = saveImage(file);
+                            tutorial.setImageUrl(imageUrl);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to save image", e);
+                        }
+                    }
                     return tutorialRepository.save(tutorial);
                 }).orElseGet(() -> {
                     updatedTutorial.setId(id);
+                    if (file != null && !file.isEmpty()) {
+                        try {
+                            String imageUrl = saveImage(file);
+                            updatedTutorial.setImageUrl(imageUrl);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to save image", e);
+                        }
+                    }
                     return tutorialRepository.save(updatedTutorial);
                 });
     }
@@ -51,34 +75,23 @@ public class TutorialService {
         tutorialRepository.deleteById(id);
     }
 
-    public Tutorial uploadImage(String id, MultipartFile file) throws IOException {
-        Tutorial tutorial = tutorialRepository.findById(id).orElseThrow(() -> new RuntimeException("Tutorial not found with id: " + id));
-
-        // Save the image to a storage service (or locally) and get the URL
-        String imageUrl = saveImage(file);
-
-        // Set the image URL in the tutorial entity
-        tutorial.setImageUrl(imageUrl);
-
-        // Save updated tutorial with image URL
-        return tutorialRepository.save(tutorial);
-    }
-
     private String saveImage(MultipartFile file) throws IOException {
-        // Define the directory where you want to store the images
-        String uploadDir = "./uploads/";
-
-        // Create directory if it doesn't exist
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Save the file to the upload directory
-        Path filePath = uploadPath.resolve(file.getOriginalFilename());
-        Files.copy(file.getInputStream(), filePath);
+        // Generate a unique filename
+        String uniqueFilename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(uniqueFilename);
 
-        // Return the relative path (you might want to store the full path or URL)
-        return "/uploads/" + file.getOriginalFilename();
+        // Validate file type (example: only allow JPEG and PNG)
+        String fileType = Files.probeContentType(filePath);
+        if (!fileType.equals("image/jpeg") && !fileType.equals("image/png")) {
+            throw new IOException("Unsupported file type: " + fileType);
+        }
+
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        return "/uploads/" + uniqueFilename;
     }
 }

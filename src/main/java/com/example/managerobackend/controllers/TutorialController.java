@@ -10,15 +10,20 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/tutorials")
+@RequestMapping("/api/tutorials")
 public class TutorialController {
 
+    private final TutorialService tutorialService;
+
     @Autowired
-    private TutorialService tutorialService;
+    public TutorialController(TutorialService tutorialService) {
+        this.tutorialService = tutorialService;
+    }
 
     @PostMapping("/create")
-    public Tutorial saveTutorial(@RequestBody Tutorial tutorial) {
-        return tutorialService.saveTutorial(tutorial);
+    public Tutorial saveTutorial(@RequestPart("tutorial") Tutorial tutorial,
+                                 @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+        return tutorialService.saveTutorial(tutorial, file);
     }
 
     @GetMapping
@@ -32,17 +37,14 @@ public class TutorialController {
     }
 
     @PutMapping("/{id}")
-    public Tutorial updateTutorial(@PathVariable String id, @RequestBody Tutorial tutorial) {
-        return tutorialService.updateTutorial(id, tutorial);
+    public Tutorial updateTutorial(@PathVariable String id,
+                                   @RequestPart("tutorial") Tutorial tutorial,
+                                   @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+        return tutorialService.updateTutorial(id, tutorial, file);
     }
 
     @DeleteMapping("/{id}")
     public void deleteTutorial(@PathVariable String id) {
         tutorialService.deleteTutorial(id);
-    }
-
-    @PostMapping("/{id}/uploadImage")
-    public Tutorial uploadImage(@PathVariable String id, @RequestParam("file") MultipartFile file) throws IOException {
-        return tutorialService.uploadImage(id, file);
     }
 }
