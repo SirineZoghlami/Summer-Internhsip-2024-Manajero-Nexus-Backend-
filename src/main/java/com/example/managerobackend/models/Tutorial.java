@@ -21,5 +21,7 @@ public class Tutorial {
     private String limitations;
     private String applyingNexus;
     private String conclusion;
-    private String imageUrl; // New field for image URL
+    private String roleImageUrl;
+    private String processImageUrl;
+
 }
