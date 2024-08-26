@@ -22,10 +22,14 @@ public class TutorialService {
 
     private final String uploadDir = "./uploads/";
 
-    public Tutorial saveTutorial(Tutorial tutorial, MultipartFile file) throws IOException {
-        if (file != null && !file.isEmpty()) {
-            String imageUrl = saveImage(file);
-            tutorial.setImageUrl(imageUrl);
+    public Tutorial saveTutorial(Tutorial tutorial, MultipartFile roleImage, MultipartFile processImage) throws IOException {
+        if (roleImage != null && !roleImage.isEmpty()) {
+            String roleImageUrl = saveImage(roleImage);
+            tutorial.setRoleImageUrl(roleImageUrl);
+        }
+        if (processImage != null && !processImage.isEmpty()) {
+            String processImageUrl = saveImage(processImage);
+            tutorial.setProcessImageUrl(processImageUrl);
         }
         return tutorialRepository.save(tutorial);
     }
@@ -38,9 +42,10 @@ public class TutorialService {
         return tutorialRepository.findById(id).orElse(null);
     }
 
-    public Tutorial updateTutorial(String id, Tutorial updatedTutorial, MultipartFile file) throws IOException {
+    public Tutorial updateTutorial(String id, Tutorial updatedTutorial, MultipartFile roleImage, MultipartFile processImage) throws IOException {
         return tutorialRepository.findById(id)
                 .map(tutorial -> {
+                    // Update all fields from updatedTutorial
                     tutorial.setIntroduction(updatedTutorial.getIntroduction());
                     tutorial.setWhyUse(updatedTutorial.getWhyUse());
                     tutorial.setWhatIsNexus(updatedTutorial.getWhatIsNexus());
@@ -48,28 +53,57 @@ public class TutorialService {
                     tutorial.setLimitations(updatedTutorial.getLimitations());
                     tutorial.setApplyingNexus(updatedTutorial.getApplyingNexus());
                     tutorial.setConclusion(updatedTutorial.getConclusion());
-                    if (file != null && !file.isEmpty()) {
+
+                    // Handle roleImage if provided
+                    if (roleImage != null && !roleImage.isEmpty()) {
                         try {
-                            String imageUrl = saveImage(file);
-                            tutorial.setImageUrl(imageUrl);
+                            String roleImageUrl = saveImage(roleImage);
+                            tutorial.setRoleImageUrl(roleImageUrl);
                         } catch (IOException e) {
-                            throw new RuntimeException("Failed to save image", e);
+                            throw new RuntimeException("Failed to save role image", e);
                         }
                     }
+
+                    // Handle processImage if provided
+                    if (processImage != null && !processImage.isEmpty()) {
+                        try {
+                            String processImageUrl = saveImage(processImage);
+                            tutorial.setProcessImageUrl(processImageUrl);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Failed to save process image", e);
+                        }
+                    }
+
                     return tutorialRepository.save(tutorial);
-                }).orElseGet(() -> {
+                })
+                .orElseGet(() -> {
+                    // If the tutorial does not exist, create a new one
                     updatedTutorial.setId(id);
-                    if (file != null && !file.isEmpty()) {
+
+                    if (roleImage != null && !roleImage.isEmpty()) {
+                        String roleImageUrl = null;
                         try {
-                            String imageUrl = saveImage(file);
-                            updatedTutorial.setImageUrl(imageUrl);
+                            roleImageUrl = saveImage(roleImage);
                         } catch (IOException e) {
-                            throw new RuntimeException("Failed to save image", e);
+                            throw new RuntimeException(e);
                         }
+                        updatedTutorial.setRoleImageUrl(roleImageUrl);
                     }
+
+                    if (processImage != null && !processImage.isEmpty()) {
+                        String processImageUrl = null;
+                        try {
+                            processImageUrl = saveImage(processImage);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        updatedTutorial.setProcessImageUrl(processImageUrl);
+                    }
+
                     return tutorialRepository.save(updatedTutorial);
                 });
     }
+
 
     public void deleteTutorial(String id) {
         tutorialRepository.deleteById(id);
@@ -87,7 +121,7 @@ public class TutorialService {
 
         // Validate file type (example: only allow JPEG and PNG)
         String fileType = Files.probeContentType(filePath);
-        if (!fileType.equals("image/jpeg") && !fileType.equals("image/png")) {
+        if (fileType == null || (!fileType.equals("image/jpeg") && !fileType.equals("image/png"))) {
             throw new IOException("Unsupported file type: " + fileType);
         }
 
